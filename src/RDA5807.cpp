@@ -111,6 +111,9 @@ word16_to_bytes RDA5807::getDirectRegister(uint8_t reg)
     aux.refined.lowByte = Wire.read();
     Wire.endTransmission();
 
+    if (reg < 0x0A)
+        shadowRegisters[reg] = aux.raw;
+
     return aux;
 }
 
@@ -174,8 +177,7 @@ void RDA5807::waitAndFinishTune()
 {
     do
     {
-        getStatus(REG0A);
-    } while (reg0a->refined.STC == 0);
+    } while (((rda_reg0a*) getStatus(REG0A))->refined.STC == 0);
 }
 
 /**
@@ -467,8 +469,7 @@ uint16_t RDA5807::getFrequency()
  */
 uint16_t RDA5807::getRealChannel()
 {
-    getStatus(REG0A);
-    return reg0a->refined.READCHAN;
+    return ((rda_reg0a*) getStatus(REG0A))->refined.READCHAN;
 }
 
 /**
@@ -571,8 +572,7 @@ void RDA5807::seek(uint8_t seek_mode, uint8_t direction, void (*showFunc)())
             showFunc();
         }
         delay(10);
-        getStatus(REG0A);
-    } while (reg0a->refined.STC == 0);
+    } while (((rda_reg0a*) getStatus(REG0A))->refined.STC == 0);
     waitAndFinishTune();
     setFrequency(getRealFrequency()); // Fixes station found.
 }
@@ -825,10 +825,7 @@ void RDA5807::setRBDS(bool value)
  */
 bool RDA5807::getRdsReady()
 {
-    // getStatus(REG0A);
-    getStatusRegisters();
-
-    return reg0a->refined.RDSR;
+    return ((rda_reg0a*) getStatus(REG0A))->refined.RDSR;
 }
 
 /**
@@ -841,7 +838,7 @@ bool RDA5807::getRdsReady()
 uint8_t RDA5807::getRdsFlagAB(void)
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     return blkb.refined.textABFlag;
 }
 
@@ -858,7 +855,7 @@ uint8_t RDA5807::getRdsFlagAB(void)
 bool RDA5807::isNewRdsFlagAB(void)
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     if (blkb.refined.textABFlag != this->oldTextABFlag)
     {
         this->oldTextABFlag = blkb.refined.textABFlag; // saves the latest value
@@ -917,7 +914,7 @@ bool RDA5807::getRdsAllData(char **stationName, char **stationInformation, char 
 uint16_t RDA5807::getRdsGroupType()
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     return blkb.group0.groupType;
 }
 
@@ -931,7 +928,7 @@ uint16_t RDA5807::getRdsGroupType()
 uint8_t RDA5807::getRdsVersionCode(void)
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     return blkb.refined.versionCode;
 }
 
@@ -947,7 +944,7 @@ uint8_t RDA5807::getRdsVersionCode(void)
 uint8_t RDA5807::getRdsProgramType(void)
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     return blkb.refined.programType;
 }
 
@@ -963,7 +960,7 @@ uint8_t RDA5807::getRdsProgramType(void)
 uint8_t RDA5807::getRdsTrafficProgramCode(void)
 {
     rds_blockb blkb;
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     return blkb.refined.trafficProgramCode;
 }
 
@@ -980,7 +977,7 @@ void RDA5807::getNext2Block(char *c)
     int i, j;
     word16_to_bytes blk;
 
-    blk.raw = reg0f->RDSD;
+    blk.raw = ((rda_reg0f*) getStatus(REG0F))->RDSD;
 
     raw[1] = blk.refined.lowByte;
     raw[0] = blk.refined.highByte;
@@ -1017,8 +1014,8 @@ void RDA5807::getNext4Block(char *c)
     int i, j;
     word16_to_bytes blk_c, blk_d;
 
-    blk_c.raw = reg0e->RDSC;
-    blk_d.raw = reg0f->RDSD;
+    blk_c.raw = ((rda_reg0e*) getStatus(REG0E))->RDSC;
+    blk_d.raw = ((rda_reg0f*) getStatus(REG0F))->RDSD;
 
     raw[0] = blk_c.refined.highByte;
     raw[1] = blk_c.refined.lowByte;
@@ -1058,7 +1055,7 @@ char *RDA5807::getRdsText0A(void)
     static int rdsTextAdress0A;
     rds_blockb blkb;
 
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
 
     if (blkb.group0.groupType == 0)
     {
@@ -1088,7 +1085,7 @@ char *RDA5807::getRdsText2A(void)
     static int rdsTextAdress2A;
     rds_blockb blkb;
 
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     rdsTextAdress2A = blkb.group2.address;
 
     if (blkb.group2.groupType == 2)
@@ -1118,7 +1115,7 @@ char *RDA5807::getRdsText2B(void)
     static int rdsTextAdress2B;
     rds_blockb blkb;
 
-    blkb.blockB = reg0d->RDSB;
+    blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
     if (blkb.group2.groupType == 1)
     {
         // Process group 2B
@@ -1146,9 +1143,9 @@ char *RDA5807::getRdsTime()
     word16_to_bytes blk_b, blk_c, blk_d;
     rds_blockb blkb;
 
-    blk_b.raw = blkb.blockB = reg0d->RDSB;
-    blk_c.raw = reg0e->RDSC;
-    blk_d.raw = reg0f->RDSD;
+    blk_b.raw = blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
+    blk_c.raw = ((rda_reg0e*) getStatus(REG0E))->RDSC;
+    blk_d.raw = ((rda_reg0f*) getStatus(REG0F))->RDSD;
 
     uint16_t minute;
     uint16_t hour;
@@ -1211,9 +1208,9 @@ char *RDA5807::getRdsLocalTime()
     word16_to_bytes blk_b, blk_c, blk_d;
     rds_blockb blkb;
 
-    blk_b.raw = blkb.blockB = reg0d->RDSB;
-    blk_c.raw = reg0e->RDSC;
-    blk_d.raw = reg0f->RDSD;
+    blk_b.raw = blkb.blockB = ((rda_reg0d*) getStatus(REG0D))->RDSB;
+    blk_c.raw = ((rda_reg0e*) getStatus(REG0E))->RDSC;
+    blk_d.raw = ((rda_reg0f*) getStatus(REG0F))->RDSD;
 
     uint16_t minute;
     uint16_t hour;
@@ -1550,8 +1547,7 @@ void RDA5807::setBass(bool value)
  */
 bool RDA5807::isStereo()
 {
-    getStatus(REG0A);
-    return reg0a->refined.ST;
+    return ((rda_reg0a*) getStatus(REG0A))->refined.ST;
 }
 
 /**
@@ -1664,6 +1660,5 @@ void RDA5807::setLnaPortSel(uint8_t value)
  */
 int RDA5807::getRssi()
 {
-    getStatus(REG0B);
-    return reg0b->refined.RSSI;
+    return ((rda_reg0b*) getStatus(REG0B))->refined.RSSI;
 }

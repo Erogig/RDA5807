@@ -761,14 +761,14 @@ public:
      * @brief Returns true if the current channel is a station.
      * @return true or false
      */
-    inline bool isFmTrue() { return reg0b->refined.FM_TRUE; };
+    inline bool isFmTrue() { return ((rda_reg0b*) getStatus(REG0B))->refined.FM_TRUE; };
 
     /**
      * @ingroup GA03
      * @brief Returns true if the FM is ready.
      * @return true or false
      */
-    inline bool isFmReady() { return reg0b->refined.FM_READY; };
+    inline bool isFmReady() { return ((rda_reg0b*) getStatus(REG0B))->refined.FM_READY; };
 
     uint16_t getDeviceId();
 
@@ -832,7 +832,7 @@ public:
      * @brief Gets Audio Mute Status. Same isMuted
      * @return True if muted
      */
-    inline bool getMute() { return !reg02->refined.DMUTE; };
+    inline bool getMute() { return isMuted(); };
 
     /**
      * @ingroup GA07
@@ -915,7 +915,7 @@ public:
      */
     inline uint8_t getBlockId()
     {
-        return reg0b->refined.ABCD_E;
+        return ((rda_reg0b*) getStatus(REG0B))->refined.ABCD_E;
     }
 
     /**
@@ -938,7 +938,7 @@ public:
      */
     inline uint8_t getErrorBlockA() 
     {
-        return reg0b->refined.BLERA;
+        return ((rda_reg0b*) getStatus(REG0B))->refined.BLERA;
     }
 
     /**
@@ -962,7 +962,7 @@ public:
      */
     inline uint8_t getErrorBlockB()
     {
-        return reg0b->refined.BLERB;
+        return ((rda_reg0b*) getStatus(REG0B))->refined.BLERB;
     }
 
     /**
@@ -974,8 +974,9 @@ public:
      * @return  true or false
      */
     inline bool hasRdsInfo()
-    {
-        return (reg0a->refined.RDSS && reg0b->refined.ABCD_E == 0 && reg0b->refined.BLERB == 0);
+    {   
+        rda_reg0b* regb = (rda_reg0b*) getStatus(REG0B);
+        return (((rda_reg0a*) getStatus(REG0A))->refined.RDSS && regb->refined.ABCD_E == 0 && regb->refined.BLERB == 0);
     }
 
     /**
@@ -987,7 +988,8 @@ public:
      */
     inline bool hasRdsInfoAB()
     {
-        return (reg0a->refined.RDSS && reg0b->refined.ABCD_E == 0 && reg0b->refined.BLERA == 0 && reg0b->refined.BLERB == 0);
+        rda_reg0b* regb = (rda_reg0b*) getStatus(REG0B);
+        return (((rda_reg0a*) getStatus(REG0A))->refined.RDSS && regb->refined.ABCD_E == 0 && regb->refined.BLERA == 0 && regb->refined.BLERB == 0);
     }
 
     /**
@@ -1000,7 +1002,7 @@ public:
      */
     inline bool getRdsSync()
     {
-        return reg0a->refined.RDSS;
+        return ((rda_reg0a*) getStatus(REG0A))->refined.RDSS;
     }
 
     // I2S
